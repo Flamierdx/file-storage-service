@@ -6,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FileDocument, FileModel } from './entities/file';
 import { Model } from 'mongoose';
 import * as path from 'path';
+import { IFindFilesParams } from './types/find-files-params';
 
 @Injectable()
 export class FilesService implements ICrudService {
@@ -35,8 +36,13 @@ export class FilesService implements ICrudService {
     return undefined;
   }
 
-  findAll(...args: unknown[]): unknown {
-    return undefined;
+  findAll(params: IFindFilesParams): Promise<FileDocument[]> {
+    return this.file
+      .find({})
+      .skip(params.skip || 0)
+      .limit(params.limit || 0)
+      .sort(params.sortValue && params.sortOrder ? { [params.sortValue]: params.sortOrder } : undefined)
+      .exec();
   }
 
   findOne(...args: unknown[]): unknown {
