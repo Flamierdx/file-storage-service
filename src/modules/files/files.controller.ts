@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Query, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { File } from './decorators/file';
 import { FileDocument } from './entities/file';
 import { IGetFilesQuery } from './types/get-files-query';
+import { Response } from 'express';
+import { RenameFileDto } from './dto/rename-file.dto';
 
 @Controller('files')
 export class FilesController {
@@ -11,11 +13,19 @@ export class FilesController {
 
   @UseInterceptors(FileInterceptor('file'))
   @Post('upload')
-  async upload(@File() file: Express.Multer.File): Promise<FileDocument> {
+  async uploadFile(@File() file: Express.Multer.File): Promise<FileDocument> {
     return this.filesService.create(file);
   }
 
-  async download() {}
+  @Get(':id/download')
+  async downloadFile(@Param('id') id: string, @Res() res: Response) {
+    await this.filesService.download(id, res);
+  }
+
+  @Get(':id')
+  async getOneFile(@Param('id') id: string): Promise<FileDocument> {
+    return this.filesService.findOne(id);
+  }
 
   @Get()
   async getManyFiles(@Query() query: IGetFilesQuery): Promise<FileDocument[]> {
@@ -25,5 +35,16 @@ export class FilesController {
       sortValue: query.sort ? (query.sort.split(',')[0] as any) : undefined,
       sortOrder: query.sort ? (query.sort.split(',')[1] as any) : undefined,
     });
+  }
+
+  @Delete(':id')
+  async deleteFile(@Param('id') id: string) {
+    await this.filesService.delete(id);
+    return 200;
+  }
+
+  @Put(':id/rename')
+  async renameFile(@Param('id') id: string, @Body() renameFileDto: RenameFileDto) {
+    return this.filesService.rename(id, renameFileDto.filename);
   }
 }

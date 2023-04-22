@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { S3_STORAGE_SERVICE } from '../storage/constants';
 import { IStorageService } from '../storage/services';
 import { ICrudService } from '../../shared/types/crud-service.interface';
@@ -7,6 +7,7 @@ import { FileDocument, FileModel } from './entities/file';
 import { Model } from 'mongoose';
 import * as path from 'path';
 import { IFindFilesParams } from './types/find-files-params';
+import { Response } from 'express';
 
 @Injectable()
 export class FilesService implements ICrudService {
@@ -19,9 +20,15 @@ export class FilesService implements ICrudService {
     const binaryObjectName = Buffer.from(binaryObject.originalname, 'latin1').toString('utf-8');
     const extension = path.extname(binaryObjectName);
     const filename = path.basename(binaryObjectName, extension);
+    let file = await this.file.findOne({ name: filename }).exec();
+
+    if (file) {
+      throw new ConflictException('File has already uploaded.');
+    }
+
     const uploadedFileStorageKey = await this.storageService.upload(binaryObjectName, binaryObject);
 
-    const file = new this.file({
+    file = new this.file({
       name: filename,
       storageKey: uploadedFileStorageKey,
       mimetype: binaryObject.mimetype,
@@ -32,11 +39,19 @@ export class FilesService implements ICrudService {
     return file.save();
   }
 
-  delete(...args: unknown[]): unknown {
-    return undefined;
+  async download(id: string, res: Response): Promise<void> {
+    const file = await this.findOne(id);
+
+    await this.storageService.download(file, res);
   }
 
-  findAll(params: IFindFilesParams): Promise<FileDocument[]> {
+  async delete(id: string): Promise<void> {
+    const file = await this.findOne(id);
+    await this.storageService.delete(file.storageKey);
+    await this.file.deleteOne({ _id: id }).exec();
+  }
+
+  async findAll(params: IFindFilesParams): Promise<FileDocument[]> {
     return this.file
       .find({})
       .skip(params.skip || 0)
@@ -45,8 +60,19 @@ export class FilesService implements ICrudService {
       .exec();
   }
 
-  findOne(...args: unknown[]): unknown {
-    return undefined;
+  async findOne(id: string): Promise<FileDocument> {
+    const file = await this.file.findById(id).exec();
+    if (!file) {
+      throw new NotFoundException('File has not found.');
+    }
+
+    return file;
+  }
+
+  async rename(id: string, newFilename: string): Promise<FileDocument> {
+    const file = await this.findOne(id);
+    file.name = newFilename;
+    return file.save();
   }
 
   update(...args: unknown[]): unknown {
