@@ -1,6 +1,6 @@
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { FileEntity } from '../../files/entities/file';
+import { FileDocument, FileEntity } from '../../files/entities/file';
 
 export type UserDocument = HydratedDocument<UserEntity>;
 
@@ -13,7 +13,7 @@ export class UserEntity {
   hash: string;
 
   @Prop({ type: String, ref: 'FileEntity' })
-  files: FileEntity[];
+  files: FileDocument[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserEntity);

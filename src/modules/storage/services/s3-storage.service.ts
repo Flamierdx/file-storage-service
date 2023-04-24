@@ -29,8 +29,8 @@ export class S3StorageService implements IStorageService {
     this.s3 = new S3({});
   }
 
-  async upload(filename: string, file: Express.Multer.File): Promise<string> {
-    const key = this.generateKey(path.extname(filename));
+  async upload(userId: string, filename: string, file: Express.Multer.File): Promise<string> {
+    const key = this.generateKey(userId, path.extname(filename));
 
     if (file.size < this.CHUNK_SIZE) {
       await this.uploadSingle(key, file);
@@ -49,16 +49,17 @@ export class S3StorageService implements IStorageService {
         await this.downloadByChunks(file, res);
       }
     } catch (e) {
+      console.log(e);
       res.status(400).send({ statusCode: 400, message: 'File download has been interrupted.', error: 'Bad Request' });
     }
   }
 
-  async delete(filename: string): Promise<void> {
-    await this.s3.send(new DeleteObjectCommand({ Bucket: this.BUCKET_NAME, Key: filename }));
+  async delete(key: string): Promise<void> {
+    await this.s3.send(new DeleteObjectCommand({ Bucket: this.BUCKET_NAME, Key: key }));
   }
 
-  private generateKey(ext: string): string {
-    return `${crypto.randomBytes(16).toString('hex')}${ext}`;
+  private generateKey(userId: string, ext: string): string {
+    return `${userId}/${crypto.randomBytes(16).toString('hex')}${ext}`;
   }
 
   private async downloadSingle(file: FileEntity, res: Response) {
