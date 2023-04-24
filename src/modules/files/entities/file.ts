@@ -1,10 +1,11 @@
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { UserEntity } from '../../users/entities/user';
 
-export type FileDocument = HydratedDocument<FileModel>;
+export type FileDocument = HydratedDocument<FileEntity>;
 
 @Schema({ timestamps: true })
-export class FileModel {
+export class FileEntity {
   @Prop({ type: String, unique: true, required: true })
   name: string;
 
@@ -19,6 +20,9 @@ export class FileModel {
 
   @Prop({ type: String })
   extension: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'UserEntity' })
+  user: UserEntity;
 }
 
-export const FileSchema = SchemaFactory.createForClass(FileModel);
+export const FileSchema = SchemaFactory.createForClass(FileEntity);

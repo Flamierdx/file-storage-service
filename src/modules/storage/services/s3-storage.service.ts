@@ -1,5 +1,5 @@
 import { IStorageService } from '.';
-import { BadRequestException, Injectable, NotImplementedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -14,7 +14,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as path from 'path';
-import { FileModel } from '../../files/entities/file';
+import { FileEntity } from '../../files/entities/file';
 import { Response } from 'express';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class S3StorageService implements IStorageService {
     return key;
   }
 
-  async download(file: FileModel, res: Response): Promise<void> {
+  async download(file: FileEntity, res: Response): Promise<void> {
     try {
       if (file.size <= this.oneMB) {
         await this.downloadSingle(file, res);
@@ -53,10 +53,6 @@ export class S3StorageService implements IStorageService {
     }
   }
 
-  rename(oldFilename: string, newFilename: string): void {
-    throw new NotImplementedException();
-  }
-
   async delete(filename: string): Promise<void> {
     await this.s3.send(new DeleteObjectCommand({ Bucket: this.BUCKET_NAME, Key: filename }));
   }
@@ -65,7 +61,7 @@ export class S3StorageService implements IStorageService {
     return `${crypto.randomBytes(16).toString('hex')}${ext}`;
   }
 
-  private async downloadSingle(file: FileModel, res: Response) {
+  private async downloadSingle(file: FileEntity, res: Response) {
     const output = await this.s3.send(new GetObjectCommand({ Bucket: this.BUCKET_NAME, Key: file.storageKey }));
     this.setDownloadFileHeaders(file, res);
 
@@ -73,7 +69,7 @@ export class S3StorageService implements IStorageService {
     res.end();
   }
 
-  private async downloadByChunks(file: FileModel, res: Response) {
+  private async downloadByChunks(file: FileEntity, res: Response) {
     this.setDownloadFileHeaders(file, res);
     let rangeAndLength = { start: -1, end: -1, length: -1 };
 
@@ -175,7 +171,7 @@ export class S3StorageService implements IStorageService {
     return Promise.all(chunks);
   }
 
-  private setDownloadFileHeaders(file: FileModel, res: Response) {
+  private setDownloadFileHeaders(file: FileEntity, res: Response) {
     const encodedFilename = encodeURI(`${file.name}.${file.extension}`);
 
     res.setHeader('Content-Type', file.mimetype);

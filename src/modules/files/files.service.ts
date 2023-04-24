@@ -1,9 +1,9 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, NotImplementedException } from '@nestjs/common';
 import { S3_STORAGE_SERVICE } from '../storage/constants';
 import { IStorageService } from '../storage/services';
 import { ICrudService } from '../../shared/types/crud-service.interface';
 import { InjectModel } from '@nestjs/mongoose';
-import { FileDocument, FileModel } from './entities/file';
+import { FileDocument, FileEntity } from './entities/file';
 import { Model } from 'mongoose';
 import * as path from 'path';
 import { IFindFilesParams } from './types/find-files-params';
@@ -13,7 +13,7 @@ import { Response } from 'express';
 export class FilesService implements ICrudService {
   constructor(
     @Inject(S3_STORAGE_SERVICE) private readonly storageService: IStorageService,
-    @InjectModel(FileModel.name) private readonly file: Model<FileModel>,
+    @InjectModel(FileEntity.name) private readonly file: Model<FileEntity>,
   ) {}
 
   async create(binaryObject: Express.Multer.File): Promise<FileDocument> {
@@ -76,6 +76,6 @@ export class FilesService implements ICrudService {
   }
 
   update(...args: unknown[]): unknown {
-    return undefined;
+    throw new NotImplementedException();
   }
 }

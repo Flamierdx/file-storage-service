@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Res,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { File } from './decorators/file';
@@ -6,7 +18,9 @@ import { FileDocument } from './entities/file';
 import { IGetFilesQuery } from './types/get-files-query';
 import { Response } from 'express';
 import { RenameFileDto } from './dto/rename-file.dto';
+import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 
+@UseGuards(SessionAuthGuard)
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
@@ -44,7 +58,7 @@ export class FilesController {
   }
 
   @Put(':id/rename')
-  async renameFile(@Param('id') id: string, @Body() renameFileDto: RenameFileDto) {
+  async renameFile(@Param('id') id: string, @Body() renameFileDto: RenameFileDto): Promise<FileDocument> {
     return this.filesService.rename(id, renameFileDto.filename);
   }
 }
