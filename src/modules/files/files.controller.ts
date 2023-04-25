@@ -20,6 +20,7 @@ import { Response } from 'express';
 import { RenameFileDto } from './dto/rename-file.dto';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { GetUserId } from '../auth/decorators/get-user-id';
+import { DeleteFileType } from './types/delete-type';
 
 @UseGuards(SessionAuthGuard)
 @Controller('files')
@@ -39,12 +40,13 @@ export class FilesController {
 
   @Get(':id')
   async getOneFile(@GetUserId() userId: string, @Param('id') fileId: string): Promise<FileDocument> {
+    console.log(userId);
     return this.filesService.findOne(userId, fileId);
   }
 
   @Get()
   async getManyFiles(@GetUserId() userId: string, @Query() query: IGetFilesQuery): Promise<FileDocument[]> {
-    return this.filesService.findAll(userId, {
+    return this.filesService.findAll(userId, query.type, {
       limit: query.limit ? parseInt(query.limit) : undefined,
       skip: query.offset ? parseInt(query.offset) : undefined,
       sortValue: query.sort ? (query.sort.split(',')[0] as any) : undefined,
@@ -53,9 +55,8 @@ export class FilesController {
   }
 
   @Delete(':id')
-  async deleteFile(@GetUserId() userId: string, @Param('id') fileId: string) {
-    await this.filesService.delete(userId, fileId);
-    return 204;
+  async deleteFile(@GetUserId() userId: string, @Param('id') fileId: string, @Query('type') type: DeleteFileType) {
+    return this.filesService.delete(userId, fileId, type);
   }
 
   @Put(':id/rename')

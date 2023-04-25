@@ -1,6 +1,6 @@
 import { HydratedDocument, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { UserDocument, UserEntity } from '../../users/entities/user';
+import { UserDocument } from '../../users/entities/user';
 
 export type FileDocument = HydratedDocument<FileEntity>;
 
@@ -23,6 +23,18 @@ export class FileEntity {
 
   @Prop({ type: Types.ObjectId, ref: 'UserEntity' })
   user: UserDocument;
+
+  @Prop({ type: Date })
+  deletedAt?: Date;
 }
 
 export const FileSchema = SchemaFactory.createForClass(FileEntity);
+
+FileSchema.set('toJSON', {
+  transform: (_, obj) => {
+    obj.id = obj._id.toString();
+    delete obj._id;
+    delete obj.__v;
+    delete obj.user;
+  },
+});

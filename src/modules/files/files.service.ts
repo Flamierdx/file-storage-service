@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -16,6 +17,8 @@ import * as path from 'path';
 import { IFindFilesParams } from './types/find-files-params';
 import { Response } from 'express';
 import { UserEntity } from '../users/entities/user';
+import { DeleteFileType } from './types/delete-type';
+import { GetFilesType } from './types/get-files-query';
 
 @Injectable()
 export class FilesService implements ICrudService {
@@ -54,16 +57,24 @@ export class FilesService implements ICrudService {
     await this.storageService.download(file, res);
   }
 
-  async delete(userId: string, fileId: string): Promise<void> {
+  async delete(userId: string, fileId: string, type: DeleteFileType): Promise<FileDocument> {
     const file = await this.findOne(userId, fileId);
 
-    await this.storageService.delete(file.storageKey);
-    await this.file.deleteOne({ _id: fileId }).exec();
+    if (type === 'soft') {
+      await this.softDelete(file);
+    } else if (type === 'hard') {
+      await this.hardDelete(file);
+    } else {
+      throw new BadRequestException('Invalid request type for delete operation.');
+    }
+
+    return file;
   }
 
-  async findAll(userId: string, params: IFindFilesParams): Promise<FileDocument[]> {
+  async findAll(userId: string, type: GetFilesType, params: IFindFilesParams): Promise<FileDocument[]> {
     return this.file
       .find({ user: userId })
+      .exists('deletedAt', type === 'bin')
       .skip(params.skip || 0)
       .limit(params.limit || 0)
       .sort(params.sortValue && params.sortOrder ? { [params.sortValue]: params.sortOrder } : undefined)
@@ -86,12 +97,24 @@ export class FilesService implements ICrudService {
 
   async rename(userId: string, fileId: string, newFilename: string): Promise<FileDocument> {
     const file = await this.findOne(userId, fileId);
-
     file.name = newFilename;
     return file.save();
   }
 
   update(...args: unknown[]): unknown {
     throw new NotImplementedException();
+  }
+
+  private async softDelete(file: FileDocument) {
+    if (file.deletedAt) {
+      await this.file.updateOne({ _id: file._id }, { $unset: { deletedAt: 1 } }).exec();
+    } else {
+      await this.file.updateOne({ _id: file._id }, { $set: { deletedAt: new Date() } }).exec();
+    }
+  }
+
+  private async hardDelete(file: FileDocument) {
+    await this.storageService.delete(file.storageKey);
+    await this.file.deleteOne({ _id: file._id }).exec();
   }
 }

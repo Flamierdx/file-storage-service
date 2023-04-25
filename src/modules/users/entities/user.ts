@@ -1,6 +1,7 @@
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { FileDocument, FileEntity } from '../../files/entities/file';
+import { FileDocument } from '../../files/entities/file';
+import { Exclude } from 'class-transformer';
 
 export type UserDocument = HydratedDocument<UserEntity>;
 
@@ -9,6 +10,7 @@ export class UserEntity {
   @Prop({ type: String, required: true, unique: true })
   email: string;
 
+  @Exclude()
   @Prop({ type: String })
   hash: string;
 
@@ -17,3 +19,12 @@ export class UserEntity {
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserEntity);
+
+UserSchema.set('toJSON', {
+  transform: (_, obj) => {
+    obj.id = obj._id.toString();
+    delete obj._id;
+    delete obj.__v;
+    delete obj.hash;
+  },
+});
