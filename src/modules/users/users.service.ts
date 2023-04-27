@@ -10,7 +10,7 @@ import * as argon2 from 'argon2';
 export class UsersService implements ICrudService {
   constructor(@InjectModel(UserEntity.name) private readonly user: Model<UserEntity>) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto): Promise<UserEntity> {
     const user = await this.user.create(dto);
     return user.save();
   }
@@ -23,8 +23,12 @@ export class UsersService implements ICrudService {
     throw new NotImplementedException();
   }
 
-  async findOne(by: FilterQuery<UserEntity>): Promise<UserDocument> {
-    const user = await this.user.findOne(by).exec();
+  async findOne(by: FilterQuery<UserEntity>): Promise<UserDocument | null> {
+    return this.user.findOne(by).exec();
+  }
+
+  async findOneOrThrow(by: FilterQuery<UserEntity>): Promise<UserDocument> {
+    const user = await this.findOne(by);
 
     if (!user) {
       throw new NotFoundException('User has not found.');
@@ -38,7 +42,7 @@ export class UsersService implements ICrudService {
   }
 
   async validateUser(email: string, password: string): Promise<UserDocument> {
-    const user = await this.findOne({ email });
+    const user = await this.findOneOrThrow({ email });
 
     if (!(await argon2.verify(user.hash, password))) {
       throw new ForbiddenException('Invalid password.');

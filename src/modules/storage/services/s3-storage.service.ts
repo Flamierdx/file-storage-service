@@ -21,8 +21,8 @@ import { Response } from 'express';
 export class S3StorageService implements IStorageService {
   private readonly s3: S3;
   private readonly BUCKET_NAME: string;
-  private readonly CHUNK_SIZE = 5 * 1024 * 1024;
-  private oneMB = 1024 * 1024;
+  private readonly UPLOAD_CHUNK_SIZE = 5 * 1024 * 1024;
+  private readonly DOWNLOAD_CHUNK_SIZE = 1024 * 1024;
 
   constructor(config: ConfigService) {
     this.BUCKET_NAME = config.getOrThrow('AWS_S3_BUCKET_NAME');
@@ -32,7 +32,7 @@ export class S3StorageService implements IStorageService {
   async upload(userId: string, filename: string, file: Express.Multer.File): Promise<string> {
     const key = this.generateKey(userId, path.extname(filename));
 
-    if (file.size < this.CHUNK_SIZE) {
+    if (file.size < this.UPLOAD_CHUNK_SIZE) {
       await this.uploadSingle(key, file);
     } else {
       await this.uploadWithMultipart(key, file);
@@ -43,13 +43,12 @@ export class S3StorageService implements IStorageService {
 
   async download(file: FileEntity, res: Response): Promise<void> {
     try {
-      if (file.size <= this.oneMB) {
+      if (file.size <= this.DOWNLOAD_CHUNK_SIZE) {
         await this.downloadSingle(file, res);
       } else {
         await this.downloadByChunks(file, res);
       }
     } catch (e) {
-      console.log(e);
       res.status(400).send({ statusCode: 400, message: 'File download has been interrupted.', error: 'Bad Request' });
     }
   }
@@ -63,7 +62,12 @@ export class S3StorageService implements IStorageService {
   }
 
   private async downloadSingle(file: FileEntity, res: Response) {
-    const output = await this.s3.send(new GetObjectCommand({ Bucket: this.BUCKET_NAME, Key: file.storageKey }));
+    const command = new GetObjectCommand({
+      Bucket: this.BUCKET_NAME,
+      Key: file.storageKey,
+    });
+    const output = await this.s3.send(command);
+
     this.setDownloadFileHeaders(file, res);
 
     res.write(await output.Body?.transformToByteArray());
@@ -76,7 +80,7 @@ export class S3StorageService implements IStorageService {
 
     while (!this.isDownloadComplete(rangeAndLength)) {
       const { end } = rangeAndLength;
-      const nextRange = { start: end + 1, end: end + this.oneMB };
+      const nextRange = { start: end + 1, end: end + this.DOWNLOAD_CHUNK_SIZE };
 
       const { ContentRange, Body } = await this.getObjectRange(file.storageKey, nextRange.start, nextRange.end);
 
@@ -145,27 +149,24 @@ export class S3StorageService implements IStorageService {
 
   private async uploadChunks(key: string, uploadId: string, file: Express.Multer.File) {
     const chunks = [];
-    const chunkCount = Math.ceil(file.size / this.CHUNK_SIZE);
+    const chunkCount = Math.ceil(file.size / this.UPLOAD_CHUNK_SIZE);
 
     for (let chunkNumber = 0; chunkNumber < chunkCount; chunkNumber++) {
-      const start = chunkNumber * this.CHUNK_SIZE;
-      const end = start + this.CHUNK_SIZE;
+      const start = chunkNumber * this.UPLOAD_CHUNK_SIZE;
+      const end = start + this.UPLOAD_CHUNK_SIZE;
+      const command = new UploadPartCommand({
+        Bucket: this.BUCKET_NAME,
+        UploadId: uploadId,
+        Key: key,
+        Body: file.buffer.subarray(start, end),
+        PartNumber: chunkNumber + 1,
+      });
 
       chunks.push(
-        this.s3
-          .send(
-            new UploadPartCommand({
-              Bucket: this.BUCKET_NAME,
-              UploadId: uploadId,
-              Key: key,
-              Body: file.buffer.subarray(start, end),
-              PartNumber: chunkNumber + 1,
-            }),
-          )
-          .then(d => {
-            console.log(`[UPLOAD]: file: ${key}, part ${chunkNumber + 1} uploaded successfully.`);
-            return d;
-          }),
+        this.s3.send(command).then(d => {
+          console.log(`[UPLOAD]: file: ${key}, part ${chunkNumber + 1} uploaded successfully.`);
+          return d;
+        }),
       );
     }
 

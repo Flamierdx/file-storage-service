@@ -1,6 +1,8 @@
+import { FileEntity } from '../entities/file';
+
 export interface IFindFilesParams {
-  limit?: number;
-  skip?: number;
-  sortValue?: 'size' | 'name' | 'extension';
+  limit: number;
+  offset: number;
+  sortValue?: keyof FileEntity;
   sortOrder?: 'asc' | 'desc';
 }
