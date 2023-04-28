@@ -3,7 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { FileDocument } from '../../files/entities/file';
 import { Exclude } from 'class-transformer';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
-import { ApiSchema } from '../../../shared/utils/api-schema';
+import { ApiSchema } from '../../../shared/decorators/api-schema';
 
 export type UserDocument = HydratedDocument<UserEntity>;
 

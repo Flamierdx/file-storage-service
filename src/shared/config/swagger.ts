@@ -6,7 +6,6 @@ export const setSwaggerDocument = (app: INestApplication) => {
     .setTitle('File Storage Service')
     .setDescription('Service for uploading and downloading files.')
     .setVersion('0.0.1')
-    .addCookieAuth('connect.sid', { type: 'http', in: 'Header', scheme: 'Bearer' })
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

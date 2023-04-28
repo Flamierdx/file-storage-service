@@ -120,6 +120,6 @@ export class FilesService {
   private async hardDelete(file: FileDocument): Promise<FileDocument> {
     await this.storageService.delete(file.storageKey);
     await this.file.deleteOne({ _id: file._id }).exec();
-    return this.findOneOrThrow({ _id: file._id });
+    return file;
   }
 }

@@ -1,18 +1,5 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  Res,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Param, Query, Res, UseGuards } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { File } from './decorators/file';
 import { FileEntity } from './entities/file';
 import { IGetFilesQuery } from './types/get-files-query';
@@ -22,29 +9,32 @@ import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { GetUserId } from '../auth/decorators/get-user-id';
 import { DeleteFileType } from './types/delete-type';
 import { parsePaginationQuery, parseSortQuery } from '../../shared/utils/parse-query';
+import { ApiCookieAuth, ApiInternalServerErrorResponse } from '@nestjs/swagger';
+import { ApiDeleteFile, ApiDownload, ApiGetFile, ApiGetFiles, ApiRenameFile, ApiUpload } from './decorators/swagger';
 
+@ApiInternalServerErrorResponse()
+@ApiCookieAuth()
 @UseGuards(SessionAuthGuard)
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @UseInterceptors(FileInterceptor('file'))
-  @Post('upload')
+  @ApiUpload('/upload')
   async uploadFile(@GetUserId() userId: string, @File() file: Express.Multer.File): Promise<FileEntity> {
     return this.filesService.create(userId, file);
   }
 
-  @Get(':id/download')
+  @ApiDownload('/:id/download')
   async downloadFile(@GetUserId() userId: string, @Param('id') fileId: string, @Res() res: Response): Promise<void> {
     await this.filesService.download(userId, fileId, res);
   }
 
-  @Get(':id')
+  @ApiGetFile('/:id')
   async getOneFile(@GetUserId() userId: string, @Param('id') fileId: string): Promise<FileEntity> {
     return this.filesService.findOneOrThrow({ user: userId, _id: fileId });
   }
 
-  @Get()
+  @ApiGetFiles()
   async getManyFiles(@GetUserId() userId: string, @Query() query: IGetFilesQuery): Promise<FileEntity[]> {
     return this.filesService.findAll(userId, query.type, {
       ...parsePaginationQuery(query),
@@ -52,7 +42,7 @@ export class FilesController {
     });
   }
 
-  @Delete(':id')
+  @ApiDeleteFile('/:id')
   async deleteFile(
     @GetUserId() userId: string,
     @Param('id') fileId: string,
@@ -61,7 +51,7 @@ export class FilesController {
     return this.filesService.delete(userId, fileId, type);
   }
 
-  @Put(':id/rename')
+  @ApiRenameFile('/:id/rename')
   async renameFile(
     @GetUserId() userId: string,
     @Param('id') fileId: string,
