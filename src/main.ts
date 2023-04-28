@@ -3,9 +3,14 @@ import { AppModule } from './app.module';
 import * as passport from 'passport';
 import * as session from 'express-session';
 import { COOKIE_AGE } from './shared/constants';
+import * as process from 'process';
+import { ValidationPipe } from '@nestjs/common';
+import { setSwaggerDocument } from './shared/config/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.setGlobalPrefix('api');
 
   app.use(
     session({
@@ -17,8 +22,11 @@ async function bootstrap() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  await app.listen(3000);
+  setSwaggerDocument(app);
+
+  await app.listen(process.env.PORT || 3000);
 }
 
 (async () => {
