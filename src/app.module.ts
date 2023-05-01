@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from '@modules/auth';
@@ -16,10 +17,11 @@ import { MongooseConfigService } from '@shared/config';
       inject: [ConfigService],
       useClass: MongooseConfigService,
     }),
+    ThrottlerModule.forRoot({ limit: 5, ttl: 60 }),
+    ScheduleModule.forRoot(),
     FilesModule,
     AuthModule,
     UsersModule,
-    ThrottlerModule.forRoot({ limit: 5, ttl: 60 }),
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

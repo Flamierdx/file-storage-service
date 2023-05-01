@@ -16,7 +16,6 @@ export class MongooseConfigService implements MongooseOptionsFactory {
     return {
       uri: `mongodb://${user}:${password}@${host}:${port}/${databaseName}`,
       autoIndex: true,
-      autoCreate: true,
       auth: { password, username: user },
     };
   }

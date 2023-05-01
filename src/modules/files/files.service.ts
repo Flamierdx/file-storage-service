@@ -1,9 +1,17 @@
 import * as path from 'path';
 
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { SchedulerRegistry } from '@nestjs/schedule';
 import { Response } from 'express';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 
 import { CreateFileDto } from '@modules/files/dto';
 import { FileDocument, FileEntity } from '@modules/files/entities/file';
@@ -12,10 +20,11 @@ import { S3_STORAGE_SERVICE } from '@modules/storage/constants';
 import { IStorageService } from '@modules/storage/services';
 
 @Injectable()
-export class FilesService {
+export class FilesService implements OnModuleInit {
   constructor(
     @Inject(S3_STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectModel(FileEntity.name) private readonly file: Model<FileEntity>,
+    private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
   async create(userId: string, fileData: CreateFileDto): Promise<FileDocument> {
@@ -109,26 +118,58 @@ export class FilesService {
   }
 
   private async softDelete(file: FileDocument): Promise<FileDocument> {
-    if (file.deletedAt) {
+    if (!file.deletedAt) {
       await this.moveFileToBin(file);
+      await this.setClearTimeoutOrThrow(file._id);
     } else {
       await this.returnFileFromBin(file);
+      await this.removeClearTimeout(file._id);
     }
 
     return this.findOneOrThrow({ _id: file._id });
   }
 
   private async moveFileToBin(file: FileDocument): Promise<void> {
-    await this.file.updateOne({ _id: file._id }, { $unset: { deletedAt: 1 } }).exec();
+    await this.file.updateOne({ _id: file._id }, { $set: { deletedAt: new Date() } }).exec();
   }
 
   private async returnFileFromBin(file: FileDocument): Promise<void> {
-    await this.file.updateOne({ _id: file._id }, { $set: { deletedAt: new Date() } }).exec();
+    await this.file.updateOne({ _id: file._id }, { $unset: { deletedAt: 1 } }).exec();
   }
 
   private async hardDelete(file: FileDocument): Promise<FileDocument> {
     await this.storageService.delete(file.storageKey);
     await this.file.deleteOne({ _id: file._id }).exec();
     return file;
+  }
+
+  private async setClearTimeoutOrThrow(id: Types.ObjectId | string): Promise<void> {
+    const file = await this.findOneOrThrow({ _id: id });
+    await this.setClearTimeout(file);
+  }
+
+  private async setClearTimeout(file: FileDocument): Promise<void> {
+    if (!file.deletedAt) {
+      throw new BadRequestException('File do not exist in thrash.');
+    }
+
+    const deleteDate = new Date(file.deletedAt);
+    deleteDate.setDate(file.deletedAt.getDate() + 14);
+    const deleteMs = +deleteDate - +file.deletedAt;
+
+    const timeout = setTimeout(async () => await this.hardDelete(file), deleteMs);
+    this.schedulerRegistry.addTimeout(`delete_${file._id}`, timeout);
+  }
+
+  private async removeClearTimeout(id: Types.ObjectId | string): Promise<void> {
+    this.schedulerRegistry.deleteTimeout(`delete_${id}`);
+  }
+
+  async onModuleInit(): Promise<void> {
+    const files = await this.file.find().exists('deletedAt', true).exec();
+
+    files.forEach(file => {
+      this.setClearTimeout(file);
+    });
   }
 }
