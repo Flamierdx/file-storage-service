@@ -1,11 +1,12 @@
 import { Body, Controller, HttpStatus, Req, UseInterceptors } from '@nestjs/common';
-import { RegisterDto } from './dto/register.dto';
-import { AuthService } from './auth.service';
-import { Request } from 'express';
-import { IMessage, IMessageWithData, Message, MessageWithData } from '../../shared/types/message';
-import { UserEntity } from '../users/entities/user';
 import { ApiInternalServerErrorResponse, ApiTags } from '@nestjs/swagger';
-import { ApiLogin, ApiLogout, ApiRegister } from './decorators/swagger';
+import { Request } from 'express';
+
+import { AuthService } from '@modules/auth/auth.service';
+import { ApiLogin, ApiLogout, ApiRegister } from '@modules/auth/decorators';
+import { RegisterDto } from '@modules/auth/dto';
+import { UserEntity } from '@modules/users/entities/user';
+import { IMessage, IMessageWithData, Message, MessageWithData } from '@shared/types/message';
 
 @ApiInternalServerErrorResponse()
 @ApiTags('auth')

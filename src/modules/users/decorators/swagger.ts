@@ -5,7 +5,8 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { SwaggerUserEntity } from '../entities/user';
+
+import { SwaggerUserEntity } from '@modules/users/entities/user';
 
 export const ApiGetMe = (path: string) =>
   applyDecorators(

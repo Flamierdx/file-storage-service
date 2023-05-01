@@ -1,5 +1,6 @@
-import { IStorageService } from '.';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
+import * as path from 'path';
+
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -11,11 +12,13 @@ import {
   UploadPartCommand,
   UploadPartCommandOutput,
 } from '@aws-sdk/client-s3';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import * as path from 'path';
-import { FileEntity } from '../../files/entities/file';
 import { Response } from 'express';
+
+import { FileEntity } from '@modules/files/entities/file';
+
+import { IStorageService } from '.';
 
 @Injectable()
 export class S3StorageService implements IStorageService {

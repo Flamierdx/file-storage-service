@@ -1,16 +1,24 @@
 import { Body, Controller, Param, Query, Res, UseGuards } from '@nestjs/common';
-import { FilesService } from './files.service';
-import { File } from './decorators/file';
-import { FileEntity } from './entities/file';
-import { IGetFilesQuery } from './types/get-files-query';
-import { Response } from 'express';
-import { RenameFileDto } from './dto/rename-file.dto';
-import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
-import { GetUserId } from '../auth/decorators/get-user-id';
-import { DeleteFileType } from './types/delete-type';
-import { parsePaginationQuery, parseSortQuery } from '../../shared/utils/parse-query';
 import { ApiCookieAuth, ApiInternalServerErrorResponse } from '@nestjs/swagger';
-import { ApiDeleteFile, ApiDownload, ApiGetFile, ApiGetFiles, ApiRenameFile, ApiUpload } from './decorators/swagger';
+import { Response } from 'express';
+
+import { GetUserId } from '@modules/auth/decorators';
+import { SessionAuthGuard } from '@modules/auth/guards';
+import {
+  ApiDeleteFile,
+  ApiDownload,
+  ApiGetFile,
+  ApiGetFiles,
+  ApiRenameFile,
+  ApiUpload,
+  File,
+} from '@modules/files/decorators';
+import { RenameFileDto } from '@modules/files/dto';
+import { FileEntity } from '@modules/files/entities/file';
+import { DeleteFileType, IGetFilesQuery } from '@modules/files/types';
+import { parsePaginationQuery, parseSortQuery } from '@shared/utils/parse-query';
+
+import { FilesService } from './files.service';
 
 @ApiInternalServerErrorResponse()
 @ApiCookieAuth()
@@ -21,7 +29,7 @@ export class FilesController {
 
   @ApiUpload('/upload')
   async uploadFile(@GetUserId() userId: string, @File() file: Express.Multer.File): Promise<FileEntity> {
-    return this.filesService.create(userId, file);
+    return this.filesService.uploadFile(userId, file);
   }
 
   @ApiDownload('/:id/download')

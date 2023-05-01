@@ -1,8 +1,9 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
 import * as argon2 from 'argon2';
-import { UserEntity } from '../users/entities/user';
+
+import { RegisterDto } from '@modules/auth/dto';
+import { UserEntity } from '@modules/users/entities/user';
+import { UsersService } from '@modules/users/users.service';
 
 @Injectable()
 export class AuthService {

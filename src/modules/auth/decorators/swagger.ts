@@ -9,11 +9,11 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { SwaggerUserEntity } from '../../users/entities/user';
-import { RegisterDto } from '../dto/register.dto';
-import { Message, MessageWithData } from '../../../shared/types/message';
-import { LoginDto } from '../dto/login.dto';
-import { LocalAuthGuard } from '../guards/local-auth.guard';
+
+import { LoginDto, RegisterDto } from '@modules/auth/dto';
+import { LocalAuthGuard } from '@modules/auth/guards';
+import { SwaggerUserEntity } from '@modules/users/entities/user';
+import { Message, MessageWithData } from '@shared/types/message';
 
 export const ApiRegister = (path: string) =>
   applyDecorators(

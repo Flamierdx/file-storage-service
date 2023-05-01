@@ -1,9 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
-import { UserDocument, UserEntity } from './entities/user';
-import { CreateUserDto } from './dto/create-user.dto';
 import * as argon2 from 'argon2';
+import { FilterQuery, Model } from 'mongoose';
+
+import { CreateUserDto } from '@modules/users/dto/create-user.dto';
+import { UserDocument, UserEntity } from '@modules/users/entities/user';
 
 @Injectable()
 export class UsersService {

@@ -1,4 +1,4 @@
-import { FileEntity } from '../entities/file';
+import { FileEntity } from '@modules/files/entities/file';
 
 export interface IFindFilesParams {
   limit: number;

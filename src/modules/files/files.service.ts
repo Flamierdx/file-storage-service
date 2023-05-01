@@ -1,14 +1,15 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { S3_STORAGE_SERVICE } from '../storage/constants';
-import { IStorageService } from '../storage/services';
-import { InjectModel } from '@nestjs/mongoose';
-import { FileDocument, FileEntity } from './entities/file';
-import { FilterQuery, Model } from 'mongoose';
 import * as path from 'path';
-import { IFindFilesParams } from './types/find-files-params';
+
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { Response } from 'express';
-import { DeleteFileType } from './types/delete-type';
-import { GetFilesType } from './types/get-files-query';
+import { FilterQuery, Model } from 'mongoose';
+
+import { CreateFileDto } from '@modules/files/dto';
+import { FileDocument, FileEntity } from '@modules/files/entities/file';
+import { DeleteFileType, GetFilesType, IFindFilesParams } from '@modules/files/types';
+import { S3_STORAGE_SERVICE } from '@modules/storage/constants';
+import { IStorageService } from '@modules/storage/services';
 
 @Injectable()
 export class FilesService {
@@ -17,26 +18,34 @@ export class FilesService {
     @InjectModel(FileEntity.name) private readonly file: Model<FileEntity>,
   ) {}
 
-  async create(userId: string, binaryObject: Express.Multer.File): Promise<FileDocument> {
+  async create(userId: string, fileData: CreateFileDto): Promise<FileDocument> {
+    const { filename, storageKey, extension, mimetype, size } = fileData;
+
+    const file = new this.file({
+      name: filename,
+      user: userId,
+      mimetype,
+      size,
+      storageKey,
+      extension,
+    });
+
+    return file.save();
+  }
+
+  async uploadFile(userId: string, binaryObject: Express.Multer.File): Promise<FileDocument> {
     const { extension, filename } = this.parseFilename(binaryObject.originalname);
-    let file = await this.findOne({ user: userId, name: filename });
+    const { size, mimetype } = binaryObject;
+
+    const file = await this.findOne({ user: userId, name: filename });
 
     if (file) {
       throw new ConflictException('File has already uploaded.');
     }
 
-    const uploadedFileStorageKey = await this.storageService.upload(userId, `${filename}${extension}`, binaryObject);
+    const storageKey = await this.storageService.upload(userId, `${filename}${extension}`, binaryObject);
 
-    file = new this.file({
-      name: filename,
-      storageKey: uploadedFileStorageKey,
-      mimetype: binaryObject.mimetype,
-      extension: extension.slice(1),
-      size: binaryObject.size,
-      user: userId,
-    });
-
-    return file.save();
+    return this.create(userId, { extension, filename, storageKey, mimetype, size });
   }
 
   async download(userId: string, fileId: string, res: Response): Promise<void> {

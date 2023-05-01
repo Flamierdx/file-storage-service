@@ -1,5 +1,5 @@
-import { ApiBody, ApiOkResponse, ApiProduces } from '@nestjs/swagger';
 import { applyDecorators } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiProduces } from '@nestjs/swagger';
 
 export const ApiFile = (filename: string) =>
   applyDecorators(

@@ -1,4 +1,5 @@
 import { applyDecorators, Delete, Get, Post, Put, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -10,10 +11,10 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { SwaggerFileEntity } from '../entities/file';
-import { ApiFile, ApiFileResponse } from '../../../shared/decorators/api-file';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { RenameFileDto } from '../dto/rename-file.dto';
+
+import { RenameFileDto } from '@modules/files/dto';
+import { SwaggerFileEntity } from '@modules/files/entities/file';
+import { ApiFile, ApiFileResponse } from '@shared/decorators/api-file';
 
 export const ApiUpload = (path: string) =>
   applyDecorators(
