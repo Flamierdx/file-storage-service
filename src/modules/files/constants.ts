@@ -1,6 +1,6 @@
 export const API_MESSAGES = <const>{
-  UPLOAD_DESCRIPTION: 'Upload file method to storage.',
-  DOWNLOAD_DESCRIPTION: 'Download file method from storage.',
+  UPLOAD_DESCRIPTION: 'Upload file to storage.',
+  DOWNLOAD_DESCRIPTION: 'Download file from storage.',
   GET_FILE_DESCRIPTION: 'Get one file from storage by id.',
   GET_FILES_DESCRIPTION: 'Get many files from storage.',
   DELETE_FILE_DESCRIPTION: 'Delete one file from storage by id.',
