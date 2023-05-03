@@ -6,7 +6,7 @@ import { AuthService } from '@modules/auth/auth.service';
 import { ApiLogin, ApiLogout, ApiRegister } from '@modules/auth/decorators';
 import { RegisterDto } from '@modules/auth/dto';
 import { UserEntity } from '@modules/users/entities/user';
-import { IMessage, IMessageWithData, Message, MessageWithData } from '@shared/types/message';
+import { IMessage, Message } from '@shared/types/message';
 
 @ApiInternalServerErrorResponse()
 @ApiTags('auth')
@@ -21,8 +21,8 @@ export class AuthController {
   }
 
   @ApiLogin('/login')
-  async login(@Req() req: Request): Promise<IMessageWithData<{ id: string }>> {
-    return new MessageWithData({ message: 'Logged in.', statusCode: HttpStatus.OK, data: req.user as { id: string } });
+  async login(@Req() req: Request): Promise<IMessage<{ id: string }>> {
+    return new Message({ message: 'Logged in.', statusCode: HttpStatus.OK, data: req.user as { id: string } });
   }
 
   @ApiLogout('/logout')

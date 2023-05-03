@@ -20,12 +20,11 @@ export class MongooseExceptionFilter implements ExceptionFilter {
     }
   }
 
-  private sendError(res: Response, status: number, err: MongoError, data?: { [key: string]: unknown }) {
+  private sendError(res: Response, status: number, err: MongoError) {
     res.status(status).json({
       statusCode: status,
       message: err.message,
       error: err.name,
-      ...data,
     });
   }
 }

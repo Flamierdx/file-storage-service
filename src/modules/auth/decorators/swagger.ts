@@ -7,28 +7,33 @@ import {
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import { API_MESSAGES, ERROR_MESSAGES } from '@modules/auth/constants';
 import { LoginDto, RegisterDto } from '@modules/auth/dto';
 import { LocalAuthGuard } from '@modules/auth/guards';
 import { SwaggerUserEntity } from '@modules/users/entities/user';
-import { Message, MessageWithData } from '@shared/types/message';
+import { ERROR_MESSAGES as GLOBAL_ERROR_MESSAGES } from '@shared/constants';
+import { Message } from '@shared/types/message';
 
 export const ApiRegister = (path: string) =>
   applyDecorators(
-    ApiCreatedResponse({ description: 'User has registered successfully.', type: SwaggerUserEntity }),
-    ApiBadRequestResponse({ description: 'Validation issues' }),
-    ApiConflictResponse({ description: 'User has already registered.' }),
+    ApiOperation({ description: API_MESSAGES.REGISTER_DESCRIPTION }),
+    ApiCreatedResponse({ description: API_MESSAGES.REGISTER_SUCCESS, type: SwaggerUserEntity }),
+    ApiBadRequestResponse({ description: GLOBAL_ERROR_MESSAGES.VALIDATION_ERROR }),
+    ApiConflictResponse({ description: ERROR_MESSAGES.ALREADY_REGISTERED }),
     ApiBody({ type: RegisterDto }),
     Post(path),
   );
 
 export const ApiLogin = (path: string) =>
   applyDecorators(
-    ApiNotFoundResponse({ description: 'User for login has not found.' }),
-    ApiUnauthorizedResponse({ description: 'Invalid credentials.' }),
-    ApiOkResponse({ type: MessageWithData }),
+    ApiOperation({ description: API_MESSAGES.LOGIN_DESCRIPTION }),
+    ApiNotFoundResponse({ description: ERROR_MESSAGES.NOT_FOUND }),
+    ApiUnauthorizedResponse({ description: GLOBAL_ERROR_MESSAGES.INVALID_CREDENTIALS }),
+    ApiOkResponse({ type: Message }),
     ApiBody({ type: LoginDto }),
     UseGuards(LocalAuthGuard),
     HttpCode(HttpStatus.OK),
@@ -36,4 +41,9 @@ export const ApiLogin = (path: string) =>
   );
 
 export const ApiLogout = (path: string) =>
-  applyDecorators(ApiOkResponse({ type: Message }), ApiCookieAuth(), Get(path));
+  applyDecorators(
+    ApiOperation({ description: API_MESSAGES.LOGOUT_DESCRIPTION }),
+    ApiOkResponse({ type: Message }),
+    ApiCookieAuth(),
+    Get(path),
+  );

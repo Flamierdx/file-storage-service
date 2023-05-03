@@ -5,7 +5,7 @@ export const setSwaggerDocument = (app: INestApplication) => {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('File Storage Service')
     .setDescription('Service for uploading and downloading files.')
-    .setVersion('0.0.1')
+    .setVersion('1.0.0')
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

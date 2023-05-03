@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 
 import { FileEntity } from '@modules/files/entities/file';
+import { ERROR_MESSAGES } from '@modules/storage/constants';
 
 import { IStorageService } from '.';
 
@@ -52,7 +53,9 @@ export class S3StorageService implements IStorageService {
         await this.downloadByChunks(file, res);
       }
     } catch (e) {
-      res.status(400).send({ statusCode: 400, message: 'File download has been interrupted.', error: 'Bad Request' });
+      res
+        .status(400)
+        .send({ statusCode: 400, message: ERROR_MESSAGES.DOWNLOAD_INTERRUPTED, error: BadRequestException.name });
     }
   }
 
@@ -131,7 +134,7 @@ export class S3StorageService implements IStorageService {
       }
       await this.s3.send(new DeleteObjectCommand({ Bucket: this.BUCKET_NAME, Key: key }));
 
-      throw new BadRequestException('Error with uploading file.');
+      throw new BadRequestException(ERROR_MESSAGES.UPLOADING);
     }
   }
 
@@ -165,12 +168,7 @@ export class S3StorageService implements IStorageService {
         PartNumber: chunkNumber + 1,
       });
 
-      chunks.push(
-        this.s3.send(command).then(d => {
-          console.log(`[UPLOAD]: file: ${key}, part ${chunkNumber + 1} uploaded successfully.`);
-          return d;
-        }),
-      );
+      chunks.push(this.s3.send(command));
     }
 
     return Promise.all(chunks);

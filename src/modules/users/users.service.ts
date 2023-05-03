@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import { FilterQuery, Model } from 'mongoose';
 
+import { ERROR_MESSAGES } from '@modules/users/constants';
 import { CreateUserDto } from '@modules/users/dto/create-user.dto';
 import { UserDocument, UserEntity } from '@modules/users/entities/user';
 
@@ -23,7 +24,7 @@ export class UsersService {
     const user = await this.findOne(by);
 
     if (!user) {
-      throw new NotFoundException('User has not found.');
+      throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
 
     return user;
@@ -33,7 +34,7 @@ export class UsersService {
     const user = await this.findOneOrThrow({ email });
 
     if (!(await argon2.verify(user.hash, password))) {
-      throw new ForbiddenException('Invalid password.');
+      throw new ForbiddenException(ERROR_MESSAGES.INVALID_PASSWORD);
     }
 
     return user;

@@ -13,6 +13,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { Response } from 'express';
 import { FilterQuery, Model, Types } from 'mongoose';
 
+import { ERROR_MESSAGES } from '@modules/files/constants';
 import { CreateFileDto } from '@modules/files/dto';
 import { FileDocument, FileEntity } from '@modules/files/entities/file';
 import { DeleteFileType, GetFilesType, IFindFilesParams } from '@modules/files/types';
@@ -30,14 +31,7 @@ export class FilesService implements OnModuleInit {
   async create(userId: string, fileData: CreateFileDto): Promise<FileDocument> {
     const { filename, storageKey, extension, mimetype, size } = fileData;
 
-    const file = new this.file({
-      name: filename,
-      user: userId,
-      mimetype,
-      size,
-      storageKey,
-      extension,
-    });
+    const file = new this.file({ name: filename, user: userId, mimetype, size, storageKey, extension });
 
     return file.save();
   }
@@ -49,7 +43,7 @@ export class FilesService implements OnModuleInit {
     const file = await this.findOne({ user: userId, name: filename });
 
     if (file) {
-      throw new ConflictException('File has already uploaded.');
+      throw new ConflictException(ERROR_MESSAGES.ALREADY_UPLOADED);
     }
 
     const storageKey = await this.storageService.upload(userId, `${filename}${extension}`, binaryObject);
@@ -72,7 +66,7 @@ export class FilesService implements OnModuleInit {
       case 'hard':
         return this.hardDelete(file);
       default:
-        throw new BadRequestException('Invalid request type for delete operation.');
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_DELETE_TYPE);
     }
   }
 
@@ -94,7 +88,7 @@ export class FilesService implements OnModuleInit {
     const file = await this.findOne(by);
 
     if (!file) {
-      throw new NotFoundException('File has not found.');
+      throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
 
     return file;
@@ -150,19 +144,21 @@ export class FilesService implements OnModuleInit {
 
   private async setClearTimeout(file: FileDocument): Promise<void> {
     if (!file.deletedAt) {
-      throw new BadRequestException('File do not exist in thrash.');
+      throw new BadRequestException(ERROR_MESSAGES.NOT_EXISTS_IN_THRASH);
     }
 
-    const deleteDate = new Date(file.deletedAt);
-    deleteDate.setDate(file.deletedAt.getDate() + 14);
-    const deleteMs = +deleteDate - +file.deletedAt;
-
-    const timeout = setTimeout(async () => await this.hardDelete(file), deleteMs);
+    const timeout = setTimeout(async () => await this.hardDelete(file), this.getTimeoutMs(file.deletedAt));
     this.schedulerRegistry.addTimeout(`delete_${file._id}`, timeout);
   }
 
   private async removeClearTimeout(id: Types.ObjectId | string): Promise<void> {
     this.schedulerRegistry.deleteTimeout(`delete_${id}`);
+  }
+
+  private getTimeoutMs(from: Date): number {
+    const deleteDate = new Date(from);
+    deleteDate.setDate(from.getDate() + 14);
+    return +deleteDate - +from;
   }
 
   async onModuleInit(): Promise<void> {

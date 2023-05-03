@@ -1,5 +1,5 @@
 import { Controller, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiInternalServerErrorResponse, ApiTags } from '@nestjs/swagger';
 
 import { GetUserId } from '@modules/auth/decorators';
 import { SessionAuthGuard } from '@modules/auth/guards';
@@ -8,6 +8,7 @@ import { UsersService } from '@modules/users/users.service';
 import { ApiGetMe } from './decorators/swagger';
 import { UserEntity } from './entities/user';
 
+@ApiInternalServerErrorResponse()
 @ApiCookieAuth()
 @ApiTags('users')
 @UseGuards(SessionAuthGuard)

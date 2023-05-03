@@ -1,5 +1,5 @@
 import { Body, Controller, Param, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiInternalServerErrorResponse } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiInternalServerErrorResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { GetUserId } from '@modules/auth/decorators';
@@ -22,6 +22,7 @@ import { FilesService } from './files.service';
 
 @ApiInternalServerErrorResponse()
 @ApiCookieAuth()
+@ApiTags('files')
 @UseGuards(SessionAuthGuard)
 @Controller('files')
 export class FilesController {

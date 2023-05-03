@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { ObjectWith } from '@shared/types/object';
+
 export type SortQuery<T> = { sortValue?: T; sortOrder?: 'asc' | 'desc' };
 export type PaginationQuery = { limit: number; offset: number };
 
@@ -7,7 +9,7 @@ export const checkSortOrder = (order: string): order is 'asc' | 'desc' => {
   return order === 'asc' || order === 'desc';
 };
 
-export const parseSortQuery = <T>(query: { [key: string]: any }): SortQuery<T> => {
+export const parseSortQuery = <T>(query: ObjectWith<any>): SortQuery<T> => {
   const [sortValue, sortOrder] = query?.sort?.split(',') || [undefined, undefined];
   if (typeof sortOrder === 'string' && !checkSortOrder(sortOrder)) {
     throw new BadRequestException('Invalid sort query order.');
